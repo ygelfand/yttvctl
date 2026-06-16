@@ -2,6 +2,8 @@
 
 CLI + TUI for browsing the YouTube TV channel guide and casting to Chromecast devices
 
+![yttvctl demo](assets/demo.gif)
+
 ## Auth
 
 Sign into `tv.youtube.com` in a Chromium-based browser. In DevTools (Cmd+Opt+I), open **Application → Storage → Cookies → `https://tv.youtube.com`** and copy the values of:
