@@ -41,7 +41,24 @@ yttvctl tui                                       interactive terminal ui
 --addr host:port    skip mDNS, talk to a specific Cast endpoint (or $YTTV_ADDR)
 ```
 
-## Build / install
+## Installation
+
+Download the latest binary for your platform from the [Releases](https://github.com/ygelfand/yttvctl/releases) page (macOS / Linux / Windows, amd64 / arm64).
+
+```sh
+# Example for macOS ARM
+mv yttvctl_darwin_arm64 yttvctl
+chmod +x yttvctl
+sudo mv yttvctl /usr/local/bin/
+```
+
+Or, with Go installed:
+
+```sh
+go install github.com/ygelfand/yttvctl@latest
+```
+
+## Build from source
 
 ```sh
 make build          # → ./bin/yttvctl
