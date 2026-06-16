@@ -1,0 +1,9 @@
+.secrets/
+bin/
+dist/
+*.env
+/tmp/
+yttv
+.DS_Store
+.idea/
+.vscode/
