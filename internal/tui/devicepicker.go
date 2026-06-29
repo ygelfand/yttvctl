@@ -10,6 +10,7 @@ import (
 
 type devicePicker struct {
 	devices  []cast.Device
+	statuses map[string]*cast.Status // keyed by cast.Device.ID()
 	idx      int
 	loading  bool
 	errorMsg string
@@ -28,6 +29,22 @@ func (p *devicePicker) setDevices(devs []cast.Device) {
 	if p.idx >= len(devs) {
 		p.idx = max(len(devs)-1, 0)
 	}
+}
+
+func (p *devicePicker) setStatuses(s map[string]*cast.Status) {
+	p.statuses = s
+}
+
+// nowPlaying returns a short "what's playing" suffix for a device, or "".
+func (p *devicePicker) nowPlaying(d cast.Device) string {
+	st := p.statuses[d.ID()]
+	if st == nil || st.Idle {
+		return ""
+	}
+	if st.Media != nil && st.Media.Title != "" {
+		return st.Media.Title
+	}
+	return st.AppName
 }
 
 func (p *devicePicker) selectByName(name string) {
@@ -95,6 +112,9 @@ func (p *devicePicker) layer(termW, termH int) *lipgloss.Layer {
 			} else {
 				b.WriteString("  ")
 				b.WriteString(d.Name)
+			}
+			if np := p.nowPlaying(d); np != "" {
+				b.WriteString(styleMuted.Render("  ▶ " + np))
 			}
 			b.WriteString("\n")
 		}

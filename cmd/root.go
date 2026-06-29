@@ -46,7 +46,7 @@ each run unless you set it in config or YTTV_GOOGLE_ACCOUNT_ID.`,
 	root.PersistentFlags().StringVar(&deviceName, "device", os.Getenv("YTTV_DEVICE"), "Chromecast friendly-name substring")
 	root.PersistentFlags().StringVar(&deviceAddr, "addr", os.Getenv("YTTV_ADDR"), "Chromecast host:port (skips mDNS discovery)")
 	root.PersistentFlags().StringVar(&logLevel, "log-level", envOr("YTTV_LOG_LEVEL", "info"), "log level (debug, info, warn, error)")
-	root.AddCommand(channelsCmd(), castCmd(), stopCmd(), devicesCmd(), tuiCmd())
+	root.AddCommand(channelsCmd(), castCmd(), stopCmd(), statusCmd(), devicesCmd(), tuiCmd())
 	return root
 }
 

@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 	yttv "github.com/ygelfand/lib-yttv"
 	"github.com/ygelfand/lib-yttv/cast"
+	"github.com/ygelfand/lib-yttv/discover"
 	"github.com/ygelfand/lib-yttv/epg"
 	"github.com/ygelfand/yttvctl/internal/config"
 )
@@ -28,7 +30,10 @@ type model struct {
 	images *imageCache
 	toasts *toasts
 
-	devices []cast.Device
+	devices       []cast.Device
+	devCh         <-chan discover.Event
+	statuses      map[string]*cast.Status       // keyed by cast.Device.ID()
+	statusCancels map[string]context.CancelFunc // per-device listener cancels
 
 	width, height int
 
@@ -64,9 +69,12 @@ func (m *model) Init() tea.Cmd {
 		m.device = cast.Device{Name: m.devAddr, Host: m.devAddr, Port: 8009}
 		m.hasDev = true
 	}
+	m.statuses = map[string]*cast.Status{}
+	m.statusCancels = map[string]context.CancelFunc{}
+	m.devCh = discover.Watch(m.ctx, 30*time.Second, 5*time.Second)
 	return tea.Batch(
 		loadEPG(m.ctx, m.sess),
-		discoverDevices(m.ctx, 5*time.Second),
+		waitDevice(m.devCh),
 		splashTick(),
 	)
 }
@@ -94,26 +102,46 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case imageLoadedMsg:
 		return m, nil
 
-	case devicesLoadedMsg:
-		m.devices = msg.devices
-		if m.picker != nil {
-			m.picker.setDevices(msg.devices)
-			if m.hasDev {
-				m.picker.selectByName(m.device.Name)
-			}
+	case deviceEventMsg:
+		if !msg.ok {
+			return m, nil // watch channel closed (ctx cancelled)
 		}
-		if !m.hasDev && m.devCfg != "" {
-			want := strings.ToLower(m.devCfg)
-			for _, d := range msg.devices {
-				if strings.Contains(strings.ToLower(d.Name), want) {
-					m.device = d
-					m.hasDev = true
-					m.status = "Device: " + d.Name
-					break
+		cmds := []tea.Cmd{waitDevice(m.devCh)} // keep the watch flowing
+		d := msg.ev.Device
+		id := d.ID()
+		if msg.ev.Up {
+			m.addDevice(d)
+			if d.IsVideo() {
+				if _, watching := m.statusCancels[id]; !watching {
+					dctx, cancel := context.WithCancel(m.ctx)
+					m.statusCancels[id] = cancel
+					cmds = append(cmds, waitStatus(id, cast.WatchDevice(dctx, d)))
 				}
 			}
+			if !m.hasDev && m.devCfg != "" &&
+				strings.Contains(strings.ToLower(d.Name), strings.ToLower(m.devCfg)) {
+				m.device = d
+				m.hasDev = true
+				m.status = "Device: " + d.Name
+			}
+		} else {
+			m.removeDevice(id)
+			if cancel, ok := m.statusCancels[id]; ok {
+				cancel()
+				delete(m.statusCancels, id)
+			}
+			delete(m.statuses, id)
 		}
-		return m, nil
+		m.refreshPicker()
+		return m, tea.Batch(cmds...)
+
+	case statusMsg:
+		if !msg.ok {
+			return m, nil // device listener stopped
+		}
+		m.statuses[msg.id] = msg.status
+		m.refreshPicker()
+		return m, waitStatus(msg.id, msg.ch)
 
 	case castDoneMsg:
 		m.status = fmt.Sprintf("Cast %q → %s", msg.channel, msg.device)
@@ -235,13 +263,44 @@ func (m *model) handleKey(k tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func (m *model) openPicker() tea.Cmd {
 	m.pickerOpen = true
 	m.picker = newDevicePicker()
-	if len(m.devices) > 0 {
+	// Devices stream in continuously; show whatever we have so far.
+	m.picker.setDevices(m.devices)
+	m.picker.setStatuses(m.statuses)
+	if m.hasDev {
+		m.picker.selectByName(m.device.Name)
+	}
+	return nil
+}
+
+// addDevice inserts or refreshes d, keeping m.devices sorted by name.
+func (m *model) addDevice(d cast.Device) {
+	for i := range m.devices {
+		if m.devices[i].ID() == d.ID() {
+			m.devices[i] = d
+			return
+		}
+	}
+	m.devices = append(m.devices, d)
+	sort.Slice(m.devices, func(i, j int) bool { return m.devices[i].Name < m.devices[j].Name })
+}
+
+func (m *model) removeDevice(id string) {
+	for i := range m.devices {
+		if m.devices[i].ID() == id {
+			m.devices = append(m.devices[:i], m.devices[i+1:]...)
+			return
+		}
+	}
+}
+
+func (m *model) refreshPicker() {
+	if m.picker != nil {
 		m.picker.setDevices(m.devices)
+		m.picker.setStatuses(m.statuses)
 		if m.hasDev {
 			m.picker.selectByName(m.device.Name)
 		}
 	}
-	return discoverDevices(m.ctx, 5*time.Second)
 }
 
 func (m *model) openDetail() tea.Cmd {
