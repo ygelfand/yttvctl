@@ -8,7 +8,7 @@ require (
 	github.com/saran13raj/go-pixels v0.0.0-20250629121333-58b240a3ae51
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/ygelfand/lib-yttv v0.0.0-20260629225448-9cde4780b036
+	github.com/ygelfand/lib-yttv v0.0.0-20260630002825-bb71afbc39ff
 )
 
 require (

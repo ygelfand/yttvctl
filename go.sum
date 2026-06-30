@@ -95,6 +95,8 @@ github.com/ygelfand/lib-yttv v0.0.0-20260629031340-97b618abe590 h1:FxaeUZzlb3VcX
 github.com/ygelfand/lib-yttv v0.0.0-20260629031340-97b618abe590/go.mod h1:0u/frEO1fLnSMe9jhoee8fX+Ti4YjJrEwDlUgpxutvs=
 github.com/ygelfand/lib-yttv v0.0.0-20260629225448-9cde4780b036 h1:v8Fadlt9gs21SPkYEjXf0v5e5mT1BMGVxXdyo6KAkcI=
 github.com/ygelfand/lib-yttv v0.0.0-20260629225448-9cde4780b036/go.mod h1:0u/frEO1fLnSMe9jhoee8fX+Ti4YjJrEwDlUgpxutvs=
+github.com/ygelfand/lib-yttv v0.0.0-20260630002825-bb71afbc39ff h1:AlOd2UAiBJIe8ls9o0/YL1Apc/m6VGo4mDc4Q+ESAHA=
+github.com/ygelfand/lib-yttv v0.0.0-20260630002825-bb71afbc39ff/go.mod h1:0u/frEO1fLnSMe9jhoee8fX+Ti4YjJrEwDlUgpxutvs=
 go.yaml.in/yaml/v3 v3.0.4 h1:tfq32ie2Jv2UxXFdLJdh3jXuOzWiL1fo0bu/FbuKpbc=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
